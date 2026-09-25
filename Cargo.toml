@@ -1,0 +1,17 @@
+[package]
+name = "infracalc-review"
+version = "0.1.0"
+edition = "2021"
+description = "排班表审查与组合效率核对工具：解析 box + plan.compute 结果，调用 ArknightsInfraCalc-v3 效率评估函数做部分干员/组合/体系求解，对照知识库锚点输出报告"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+arknights-infra-v3 = { path = "../ArknightsInfraCalc-v3" }
+
+[[bin]]
+name = "infracalc-review"
+path = "src/main.rs"
+
+[profile.dev]
+opt-level = 1

@@ -1,0 +1,422 @@
+{
+  "_meta": {
+    "source": "arknights-base-vault docs/3-组合库/组合注册表.md 与各组合深稿（2026-09-26 批次）",
+    "note": "anchor.value 为知识库载明的效率锚点（小数）；metric 含义见 analyze.rs。mode: exact=同口径可直接比；lower_bound/upper_bound=部分评估只覆盖子集，预期偏离方向；manual=不适合房间级自动核对。",
+    "metrics": {
+      "skill": "干员技能效率合计（评估器 breakdown.skill，千分位换算小数）",
+      "skill_paper": "知识库纸面技能合计（与 skill 同口径比较）",
+      "equivalent_trade": "等效贸易效率（breakdown.trade_equivalent_efficiency 折算干员侧）",
+      "equivalent_gold": "等效赤金效率（breakdown.gold_equivalent_efficiency）",
+      "order_multiplier": "订单倍率（breakdown.order_multiplier）",
+      "global_add": "对目标设施的全局效率增量（含/不含中枢两次评估差值）",
+      "pct": "办公室联络/会客室线索速度加成百分比"
+    }
+  },
+  "combos": [
+    {
+      "id": "tequila_group", "name": "龙舌兰组", "aliases": ["巫恋组"], "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/单站组合/龙舌兰组.md·效率分档",
+      "members": [
+        {"name": "巫恋", "elite": 2, "role": "core"},
+        {"name": "龙舌兰", "elite": 2, "role": "core"},
+        {"name": "卡夫卡", "elite": 2, "role": "key_tailor", "note": "裁缝β四选一（柏喙/卡夫卡/明椒/折光）"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["巫恋", "龙舌兰", "卡夫卡"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.90, "note": "满配纸面90%=低语45%×2；等效贸易138%+等效赤金46%（产出常数表）", "alt": [{"metric": "equivalent_trade", "value": 1.38}, {"metric": "equivalent_gold", "value": 0.46}]}
+    },
+    {
+      "id": "proviso", "name": "但书", "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/单站组合/但书.md·成员与档位",
+      "members": [
+        {"name": "但书", "elite": 2, "role": "core"},
+        {"name": "能天使", "elite": 2, "role": "tool"},
+        {"name": "海蒂", "elite": 2, "role": "tool"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["但书", "能天使", "海蒂"]}]},
+      "anchor": {"metric": "order_multiplier", "value": 1.55, "note": "精2三级站倍率1.55；二级站1.81、一级站2.0；锚点日产出15929.2/1.0效率", "alt": [{"metric": "skill_paper", "value": 0.70, "note": "队友双人70%档示例"}]}
+    },
+    {
+      "id": "closure_special", "name": "可露希尔特别订单", "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/单站组合/可露希尔特别订单.md·效率分档",
+      "members": [
+        {"name": "可露希尔", "elite": 2, "role": "core"},
+        {"name": "能天使", "elite": 2, "role": "tool"},
+        {"name": "蕾缪安", "elite": 2, "role": "tool", "note": "队友双人80%档"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["可露希尔", "能天使", "蕾缪安"]}]},
+      "anchor": {"metric": "equivalent_trade", "value": 1.24, "note": "80%档等效贸易124%/等效赤金40%；90%档135%/42%", "alt": [{"metric": "equivalent_gold", "value": 0.40}]}
+    },
+    {
+      "id": "siracusa", "name": "叙拉古", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·叙拉古行",
+      "members": [
+        {"name": "八幡海铃", "elite": 2, "role": "core_control"},
+        {"name": "伺夜", "elite": 2, "role": "core"},
+        {"name": "贝洛内", "elite": 2, "role": "core"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["八幡海铃"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["伺夜", "贝洛内"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.90, "note": "同站满配90%+订单上限+2（伺夜40+贝洛内40+海铃5×2）；伺夜新城贸易需会客室等级，此处为三级会客满档口径"}
+    },
+    {
+      "id": "karlan_trade", "name": "喀兰贸易组", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·喀兰贸易组行",
+      "members": [
+        {"name": "灵知", "elite": 2, "role": "core_control"},
+        {"name": "孑", "elite": 1, "role": "core"},
+        {"name": "银灰", "elite": 2, "role": "core"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["灵知"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["孑", "银灰"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.85, "note": "灵知中枢压效换上限后孑+银灰双人85%恒定"}
+    },
+    {
+      "id": "glasgow", "name": "格拉斯哥帮组", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·格拉斯哥帮组行",
+      "members": [
+        {"name": "戴菲恩", "elite": 2, "role": "core_control"},
+        {"name": "摩根", "elite": 2, "role": "core"},
+        {"name": "推进之王", "elite": 0, "role": "core"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["戴菲恩"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["摩根", "推进之王"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.95, "note": "双人95%；无戴菲恩中枢75%"}
+    },
+    {
+      "id": "exia", "name": "能天使组", "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·能天使组行",
+      "members": [
+        {"name": "能天使", "elite": 2, "role": "core"},
+        {"name": "蕾缪安", "elite": 2, "role": "core"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["能天使", "蕾缪安"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.80, "note": "双人合计80%订单效率"}
+    },
+    {
+      "id": "laterano", "name": "拉特兰", "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·拉特兰行",
+      "members": [
+        {"name": "新约能天使", "elite": 2, "role": "core"},
+        {"name": "蕾缪安", "elite": 2, "role": "core"},
+        {"name": "空弦", "elite": 2, "role": "key", "note": "虔诚筹款β 每宿舍每级2%，四间五级宿舍=40%"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["新约能天使", "蕾缪安", "空弦"]}]},
+      "anchor": {"metric": "skill_paper", "value": 1.15, "note": "满配115%，前提满级宿舍（布局 dorm L5 满足）"}
+    },
+    {
+      "id": "mh_squad", "name": "泡影国狩猎小队", "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·泡影国狩猎小队行",
+      "members": [
+        {"name": "焰狐龙梓兰", "elite": 2, "role": "core"},
+        {"name": "雷狼龙S空爆", "elite": 2, "role": "core"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["焰狐龙梓兰", "雷狼龙S空爆"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.75, "note": "合计75%+3订单上限；双核可分驻两站各自带队"}
+    },
+    {
+      "id": "penguin", "name": "企鹅物流", "layer": "单站", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·企鹅物流行",
+      "members": [
+        {"name": "德克萨斯", "elite": 2, "role": "core"},
+        {"name": "拉普兰德", "elite": 2, "role": "core"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["德克萨斯", "拉普兰德"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.65, "note": "恩怨：与拉普兰德同站+65%；低效率过渡组合"}
+    },
+    {
+      "id": "hung_dulin", "name": "鸿雪杜林组", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·鸿雪杜林组行",
+      "members": [
+        {"name": "鸿雪", "elite": 2, "role": "core"},
+        {"name": "绮良", "elite": 2, "role": "core"},
+        {"name": "图耶", "elite": 2, "role": "core"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["鸿雪", "绮良", "图耶"]}],
+        "note": "读全基建赤金产线计数，依赖布局内 4 间赤金制造站存在；跨站不影响效率表现"},
+      "anchor": {"metric": "skill_paper", "value": 1.60, "mode": "upper_bound", "note": "4赤金满配160%（销路宣发每赤金线+5%等）；产线计数建模程度待核对"}
+    },
+    {
+      "id": "fireworks", "name": "人间烟火组", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·人间烟火组行",
+      "members": [
+        {"name": "乌有", "elite": 2, "role": "core"},
+        {"name": "重岳", "elite": 2, "role": "core_control"},
+        {"name": "令", "elite": 2, "role": "key_control"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["重岳", "令"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["乌有"]}
+      ]},
+      "anchor": {"metric": "equivalent_trade", "value": 0.95, "mode": "upper_bound", "note": "满配95点人间烟火=95%订单效率；部分评估只搭中枢产烟火端，预期低于满配"}
+    },
+    {
+      "id": "sensing", "name": "感知信息组", "layer": "跨设施", "product": "通用制造/贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·感知信息组行",
+      "members": [
+        {"name": "迷迭香", "elite": 2, "role": "core"},
+        {"name": "黑键", "elite": 2, "role": "core"},
+        {"name": "夕", "elite": 0, "role": "key_control"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["夕"]},
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["迷迭香", "阿罗玛", "砾"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.90, "mode": "upper_bound", "note": "满配90%制造/47.5%贸易；满配依赖宿舍生产端（爱丽丝/车尔尼/塑心）与办公室絮雨，部分评估为下界"}
+    },
+    {
+      "id": "automation", "name": "自动化组", "layer": "跨设施", "product": "赤金",
+      "kb_ref": "docs/3-组合库/跨设施体系/自动化组.md·布局分档",
+      "members": [
+        {"name": "温蒂", "elite": 2, "role": "core"},
+        {"name": "清流", "elite": 1, "role": "core"},
+        {"name": "森蚺", "elite": 2, "role": "key"},
+        {"name": "承曦格雷伊", "elite": 2, "role": "key_power", "note": "晨曦：其他发电站无作业平台时虚拟电站+1"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["温蒂", "清流", "森蚺"]},
+        {"room_id": "power_1", "operators": ["承曦格雷伊"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 1.40, "note": "243制造森蚺分支：有效电站3+1=4（温蒂60+清流40+森蚺40）；342中枢森蚺分支165%"}
+    },
+    {
+      "id": "goldsmith", "name": "赤金工艺组", "layer": "单站", "product": "赤金",
+      "kb_ref": "docs/3-组合库/组合注册表.md·赤金工艺组行",
+      "members": [
+        {"name": "苍苔", "elite": 2, "role": "core"},
+        {"name": "引星棘刺", "elite": 2, "role": "key"},
+        {"name": "砾", "elite": 1, "role": "key"}
+      ],
+      "eval": {"rooms": [{"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["苍苔", "引星棘刺", "砾"]}]},
+      "anchor": {"metric": "skill_paper", "value": 1.10, "note": "三人组+110%~+116%（苍苔45+引星棘刺36+砾35）"}
+    },
+    {
+      "id": "rhine_tech", "name": "莱茵科技", "layer": "单站", "product": "通用制造",
+      "kb_ref": "docs/3-组合库/组合注册表.md·莱茵科技行",
+      "members": [
+        {"name": "多萝西", "elite": 2, "role": "core"},
+        {"name": "淬羽赫默", "elite": 2, "role": "key"},
+        {"name": "娜斯提", "elite": 2, "role": "key"}
+      ],
+      "eval": {"rooms": [{"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["多萝西", "淬羽赫默", "娜斯提"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.95, "note": "三人组+95%（通用技能，以赤金配方评估）"}
+    },
+    {
+      "id": "redcloud", "name": "红云组", "layer": "单站", "product": "经验",
+      "kb_ref": "docs/3-组合库/组合注册表.md·红云组行",
+      "members": [
+        {"name": "红云", "elite": 1, "role": "core"},
+        {"name": "酒神", "elite": 2, "role": "key_branch1"},
+        {"name": "Miss.Christine", "elite": 2, "role": "key_branch1"}
+      ],
+      "eval": {"rooms": [{"room_id": "manu_1", "level": 3, "product": "BattleRecord", "operators": ["红云", "酒神", "Miss.Christine"]}]},
+      "anchor": {"metric": "skill_paper", "value": 1.06, "note": "经验满配+106%（分支①酒神+Miss.Christine）；分支②稀音/帕拉斯/刻俄柏三选二"}
+    },
+    {
+      "id": "popvulcan", "name": "泡泡火神组", "layer": "单站", "product": "通用制造",
+      "kb_ref": "docs/3-组合库/组合注册表.md·泡泡火神组行",
+      "members": [
+        {"name": "泡泡", "elite": 1, "role": "core"},
+        {"name": "火神", "elite": 2, "role": "core"},
+        {"name": "贝娜", "elite": 0, "role": "key"}
+      ],
+      "eval": {"rooms": [{"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["泡泡", "火神", "贝娜"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.93, "note": "通用三人组+93%（仓容转化，以赤金配方评估）；经验/赤金第三人+97%、搓玉+107%"}
+    },
+    {
+      "id": "abyssal", "name": "深海猎人组", "layer": "跨设施", "product": "通用制造",
+      "kb_ref": "docs/3-组合库/跨设施体系/深海猎人组.md·效率分档",
+      "members": [
+        {"name": "歌蕾蒂娅", "elite": 2, "role": "core_control"},
+        {"name": "乌尔比安", "elite": 0, "role": "key"},
+        {"name": "斯卡蒂", "elite": 0, "role": "key"},
+        {"name": "幽灵鲨", "elite": 0, "role": "key"},
+        {"name": "安哲拉", "elite": 0, "role": "key"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["歌蕾蒂娅"]},
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["乌尔比安", "斯卡蒂"]},
+        {"room_id": "manu_2", "level": 3, "product": "PureGold", "operators": ["幽灵鲨", "安哲拉"]}
+      ], "aggregate": "sum"},
+      "anchor": {"metric": "skill_paper", "value": 1.60, "note": "2+2 满配合计160%（单站=站内2人×制造深海总4人×10%=80%）；每站单独核对 0.80；歌蕾蒂娅 3.2/h 单班≤7.5h"}
+    },
+    {
+      "id": "mizuki_std", "name": "水月标准化组", "layer": "跨设施", "product": "通用制造",
+      "kb_ref": "docs/3-组合库/组合注册表.md·水月标准化组行",
+      "members": [
+        {"name": "水月", "elite": 2, "role": "core"},
+        {"name": "涤火杰西卡", "elite": 2, "role": "key_control"},
+        {"name": "香草", "elite": 1, "role": "key"},
+        {"name": "杰西卡", "elite": 1, "role": "key"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["涤火杰西卡"]},
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["水月", "香草", "杰西卡"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 1.00, "note": "黑钢中枢形态+100%（涤火杰西卡中枢+水月/香草/杰西卡标准化）"}
+    },
+    {
+      "id": "sees", "name": "S.E.E.S.组", "layer": "跨设施", "product": "通用制造",
+      "kb_ref": "docs/3-组合库/组合注册表.md·S.E.E.S.组行",
+      "members": [
+        {"name": "结城理", "elite": 2, "role": "core"},
+        {"name": "虎狼丸", "elite": 0, "role": "pendant"},
+        {"name": "岳羽由加莉", "elite": 0, "role": "pendant"}
+      ],
+      "eval": {"rooms": [{"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["结城理", "虎狼丸", "岳羽由加莉"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.35, "note": "三级站 3 人（结城理+虎狼丸+岳羽由加莉）＝35%；4 名满配 40% 需埃癸斯（box 未持有）"}
+    },
+    {
+      "id": "bear_team", "name": "熊团经验组", "layer": "跨设施", "product": "经验",
+      "kb_ref": "docs/3-组合库/组合注册表.md·熊团经验组行",
+      "members": [
+        {"name": "怒潮凛冬", "elite": 2, "role": "core"},
+        {"name": "烈夏", "elite": 2, "role": "key"},
+        {"name": "古米", "elite": 0, "role": "key_trigger", "note": "古米须驻贸易站（任意班）"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "manu_1", "level": 3, "product": "BattleRecord", "operators": ["怒潮凛冬", "烈夏"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["古米"], "note": "触发房：古米在贸易站即满足烈夏患难拍档条件"}
+      ], "note": "锚点口径＝经验房站位合计；古米贸易房为触发件不计入"},
+      "anchor": {"metric": "skill_paper", "value": 0.75, "note": "经验房站位「怒潮凛冬＋烈夏」＝40%＋35%（两个独立技能并列，熊团经验组·成员与档位）；40%＝凛冬情同手足30+同站乌萨斯烈夏10；烈夏35%需古米驻贸易站（患难拍档）"}
+    },
+    {
+      "id": "redpine", "name": "红松林骑士组", "layer": "跨设施", "product": "经验",
+      "kb_ref": "docs/3-组合库/组合注册表.md·红松林骑士组行",
+      "members": [
+        {"name": "焰尾", "elite": 2, "role": "core_control"},
+        {"name": "薇薇安娜", "elite": 2, "role": "core_control"},
+        {"name": "灰毫", "elite": 2, "role": "key"},
+        {"name": "远牙", "elite": 2, "role": "key"},
+        {"name": "野鬃", "elite": 2, "role": "key"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["焰尾", "薇薇安娜"]},
+        {"room_id": "manu_1", "level": 3, "product": "BattleRecord", "operators": ["灰毫", "远牙", "野鬃"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 1.26, "note": "经验房126%（红松骑士团类技能+焰尾经验10%/人−贵金属10%）"}
+    },
+    {
+      "id": "monster_hunter", "name": "怪猎中枢", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·怪猎中枢行",
+      "members": [
+        {"name": "火龙S黑角", "elite": 2, "role": "core_control"},
+        {"name": "麒麟R夜刀", "elite": 2, "role": "core_control"},
+        {"name": "泰拉大陆调查团", "elite": 0, "role": "consumer"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["火龙S黑角", "麒麟R夜刀"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["泰拉大陆调查团"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.41, "note": "调查团贸易41%+2上限（可爱的艾露猫，须与中枢二人同班）；中枢附带全贸易+7%/全制造+2%光环"}
+    },
+    {
+      "id": "mujica", "name": "Mujica组", "layer": "单站（中枢）", "product": "非生产",
+      "kb_ref": "docs/3-组合库/组合注册表.md·Mujica组行",
+      "members": [
+        {"name": "丰川祥子", "elite": 2, "role": "core"},
+        {"name": "若叶睦", "elite": 2, "role": "core"},
+        {"name": "三角初华", "elite": 2, "role": "key"},
+        {"name": "八幡海铃", "elite": 2, "role": "key"},
+        {"name": "祐天寺若麦", "elite": 0, "role": "key"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["丰川祥子", "若叶睦", "三角初华", "八幡海铃", "祐天寺若麦"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["能天使", "蕾缪安"]}
+      ]},
+      "anchor": {"metric": "global_add", "value": 0.07, "note": "五人中枢60热情=每贸易站+7%（睦÷8）+每赤金站+4%（祥子E2档）；以贸易房 global 差值核对"}
+    },
+    {
+      "id": "dragon_ctrl", "name": "龙门中枢组", "layer": "单站（中枢）", "product": "非生产",
+      "kb_ref": "docs/3-组合库/组合注册表.md·龙门中枢组行",
+      "members": [
+        {"name": "斩业星熊", "elite": 2, "role": "core"},
+        {"name": "诗怀雅", "elite": 0, "role": "key"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["斩业星熊", "诗怀雅"]},
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["苍苔", "引星棘刺", "砾"]}
+      ]},
+      "anchor": {"metric": "global_add", "value": 0.03, "note": "斩业星熊+龙门近卫局同驻中枢为制造站提供+3%（以制造房 global 差值核对）"}
+    },
+    {
+      "id": "magic_cuisine", "name": "魔物料理体系", "layer": "跨设施", "product": "通用制造",
+      "kb_ref": "docs/3-组合库/组合注册表.md·魔物料理体系行",
+      "members": [
+        {"name": "森西", "elite": 2, "role": "core_dorm"},
+        {"name": "玛露西尔", "elite": 2, "role": "key_manu"},
+        {"name": "莱欧斯", "elite": 2, "role": "key_meeting"},
+        {"name": "齐尔查克", "elite": 2, "role": "key_trade"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "dorm_1", "operators": ["森西"]},
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["玛露西尔"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.35, "note": "玛露西尔制造+35%（每层魔物料理；森西驻五级宿舍产5层，部分评估为单层下界口径）"}
+    },
+    {
+      "id": "kalsit_tianshou", "name": "凯尔希·思衡托（精英干员挂件）", "layer": "跨设施", "product": "非生产",
+      "kb_ref": "docs/3-组合库/跨设施体系/凯尔希·思衡托（精英干员挂件）.md·计数与产出档",
+      "members": [
+        {"name": "凯尔希·思衡托", "elite": 2, "role": "core_office"},
+        {"name": "迷迭香", "elite": 0, "role": "pendant"},
+        {"name": "煌", "elite": 0, "role": "pendant"},
+        {"name": "逻各斯", "elite": 0, "role": "pendant"},
+        {"name": "烛煌", "elite": 0, "role": "pendant"},
+        {"name": "机械师", "elite": 0, "role": "pendant"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "office_1", "operators": ["凯尔希·思衡托"]},
+        {"room_id": "manu_1", "level": 3, "product": "PureGold", "operators": ["迷迭香"]},
+        {"room_id": "manu_2", "level": 3, "product": "BattleRecord", "operators": ["机械师"]},
+        {"room_id": "workshop", "operators": ["煌"]},
+        {"room_id": "training", "operators": ["逻各斯"]},
+        {"room_id": "power_1", "operators": ["烛煌"]}
+      ]},
+      "anchor": {"metric": "pct", "value": 50, "note": "满档+50%联络速度（30%+5间×4%）；挂件分散进驻不同设施凑计数"}
+    },
+    {
+      "id": "rainbow", "name": "彩虹小队", "layer": "单站（中枢）", "product": "非生产",
+      "kb_ref": "docs/3-组合库/组合注册表.md·彩虹小队行",
+      "members": [
+        {"name": "灰烬", "elite": 0, "role": "core"},
+        {"name": "战车", "elite": 0, "role": "core"},
+        {"name": "闪击", "elite": 0, "role": "core"},
+        {"name": "霜华", "elite": 0, "role": "core"}
+      ],
+      "eval": null,
+      "anchor": {"metric": "manual", "value": 0, "note": "中枢心情永动组（四人0.8/h回复+满员减免净回复1.05>1），无房间级效率锚点；核对归心情检查"}
+    },
+    {
+      "id": "ew_group", "name": "维什戴尔组", "layer": "跨设施", "product": "非生产/贸易",
+      "kb_ref": "docs/3-组合库/组合注册表.md·维什戴尔组行",
+      "members": [
+        {"name": "维什戴尔", "elite": 2, "role": "core_control"},
+        {"name": "赫德雷", "elite": 2, "role": "key_trade"},
+        {"name": "伊内丝", "elite": 2, "role": "key"},
+        {"name": "W", "elite": 2, "role": "pendant"}
+      ],
+      "eval": {"rooms": [
+        {"room_id": "control", "operators": ["维什戴尔"]},
+        {"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["赫德雷", "伊内丝", "W"]}
+      ]},
+      "anchor": {"metric": "skill_paper", "value": 0.40, "note": "赫德雷白手起家β 30%+伊内丝5%+W5%=40%（伊内丝/W进驻任意工作场所即可）；维什戴尔中枢提供心情恢复"}
+    },
+    {
+      "id": "hongshan_note", "name": "鸿雪杜林组（挂件用法）", "layer": "跨设施", "product": "贸易",
+      "kb_ref": "docs/3-组合库/单站组合/龙舌兰组.md·建议用法",
+      "members": [
+        {"name": "巫恋", "elite": 2, "role": "core"},
+        {"name": "龙舌兰", "elite": 2, "role": "core"},
+        {"name": "绮良", "elite": 2, "role": "pendant_third", "note": "虚拟产线计数跨站生效，作挂件第三人"}
+      ],
+      "eval": {"rooms": [{"room_id": "trade_1", "level": 3, "product": "LMD", "operators": ["巫恋", "龙舌兰", "绮良"]}]},
+      "anchor": {"metric": "skill_paper", "value": 0.90, "note": "挂件第三人档：纸面仍90%（绮良被归零、贡献虚拟产线），对照白板档124%等效"}
+    }
+  ]
+}
