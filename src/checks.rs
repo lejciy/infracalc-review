@@ -277,7 +277,7 @@ pub fn run_all_checks(
     check4_manu(layout, &views, &mut findings);
     check5_meeting(&views, &mut findings);
     check6_multi_use(box_data, &views, &mut findings);
-    check7_mood(shifts, &views, layout, &mut findings);
+    check7_mood(shifts, &views, layout, &fiam_targets, &mut findings);
     check8_continuous(shifts, &views, &fiam_targets, &mut findings);
     check9_pendants(shifts, &views, &mut findings);
     check10_recalc(result, layout, &mut findings);
@@ -799,9 +799,18 @@ fn check6_multi_use(box_data: &OperBox, views: &[ShiftView], out: &mut Vec<Findi
 
 // ---- 检查 7：心情消耗与周期可持续 ----
 
-fn check7_mood(shifts: &[Shift], views: &[ShiftView], layout: &LayoutInfo, out: &mut Vec<Finding>) {
+fn check7_mood(
+    shifts: &[Shift],
+    views: &[ShiftView],
+    layout: &LayoutInfo,
+    fiam: &[(usize, String)],
+    out: &mut Vec<Finding>,
+) {
     let total_hours: f64 = shifts.iter().map(|s| s.duration_hours).sum();
     let recovery = layout.min_dorm_recovery();
+    // 菲亚梅塔「患难之交」输送容量恒 2/h，被支持干员每小时净消耗之和 ≤ 2.0
+    // 才能轮流维持（知识库·菲亚梅塔专篇）；目标名单来自 MAA 导出块。
+    let fiam_names: HashSet<&str> = fiam.iter().map(|(_, t)| t.as_str()).collect();
     let mut work: HashMap<String, Vec<usize>> = HashMap::new();
     let mut room_of: HashMap<(usize, String), String> = HashMap::new();
     for (si, view) in views.iter().enumerate() {
@@ -810,6 +819,18 @@ fn check7_mood(shifts: &[Shift], views: &[ShiftView], layout: &LayoutInfo, out: 
             room_of.insert((si, name.clone()), room_id.clone());
         }
     }
+    // 菲亚梅塔容量判据需要全部目标的净消耗合计，先对目标做一遍核算
+    let mut supported_nets: HashMap<String, f64> = HashMap::new();
+    for target in &fiam_names {
+        if let Some(shift_ids) = work.get(*target) {
+            let mut sorted = shift_ids.clone();
+            sorted.sort_unstable();
+            let (net, _) = mood_net(target, &sorted, &room_of, views, layout);
+            supported_nets.insert(target.to_string(), net);
+        }
+    }
+    let supported_load: f64 = supported_nets.values().sum();
+    let capacity_ok = !fiam_names.is_empty() && supported_load <= 2.0 + 1e-6;
     for (name, shift_ids) in &work {
         let mut sorted = shift_ids.clone();
         sorted.sort_unstable();
@@ -839,47 +860,19 @@ fn check7_mood(shifts: &[Shift], views: &[ShiftView], layout: &LayoutInfo, out: 
             }
         }
         // 净消耗（取所在房间的最高消耗：按该干员各班中最不利的房间）
-        let mut worst_cost = 0.0;
-        let mut worst_room = String::new();
-        for &si in &sorted {
-            let room_id = room_of
-                .get(&(si, name.clone()))
-                .cloned()
-                .unwrap_or_default();
-            let kind = if room_id.starts_with("trade") {
-                "trade"
-            } else if room_id.starts_with("manu") {
-                "manufacture"
-            } else {
-                "other"
-            };
-            let (occ, level) = {
-                let room = views[si].rooms.iter().find(|r| r.room_id == room_id);
-                let occ = room.map(|r| r.operators.len()).unwrap_or(1);
-                let level = layout.level_of(&room_id);
-                (occ, level)
-            };
-            let cost = if kind == "other" {
-                0.75
-            } else {
-                base_mood_cost(kind, occ, level)
-            };
-            if cost > worst_cost {
-                worst_cost = cost;
-                worst_room = room_id;
-            }
-        }
-        let delta = MOOD_DELTA_TABLE
-            .iter()
-            .find(|d| d.name == name)
-            .map(|d| d.extra_per_hour)
-            .unwrap_or(0.0);
-        let net = worst_cost + delta;
+        let (net, worst_room) = mood_net(name, &sorted, &room_of, views, layout);
+        let is_supported = capacity_ok && fiam_names.contains(name.as_str());
         // 单管上限
         if longest_hours * net > 24.0 {
-            out.push(error(7, None, Some(worst_room.clone()), name,
-                &format!("最长连续在岗 {longest_hours:.0}h × 净消耗 {net:.2}/h = {:.1} 点，超过一管 24 点，班内涣散、技能失效", longest_hours * net),
-                "心情与宿舍·工休比与最长工作时间"));
+            if is_supported {
+                out.push(note(7, None, Some(worst_room.clone()), name,
+                    &format!("菲亚梅塔输送覆盖单管上限：连续 {longest_hours:.0}h × 净消耗 {net:.2}/h = {:.1} 点，由患难之交互换回满（目标合计 {supported_load:.2}/h ≤ 容量 2/h）", longest_hours * net),
+                    "菲亚梅塔·患难之交与输送容量（心情与宿舍·工休比）"));
+            } else {
+                out.push(error(7, None, Some(worst_room.clone()), name,
+                    &format!("最长连续在岗 {longest_hours:.0}h × 净消耗 {net:.2}/h = {:.1} 点，超过一管 24 点，班内涣散、技能失效", longest_hours * net),
+                    "心情与宿舍·工休比与最长工作时间"));
+            }
         }
         // 周期平衡
         let worked_hours: f64 = sorted.iter().map(|&si| shifts[si].duration_hours).sum();
@@ -887,12 +880,64 @@ fn check7_mood(shifts: &[Shift], views: &[ShiftView], layout: &LayoutInfo, out: 
         let consumed = worked_hours * net;
         let recovered = rest_hours * recovery;
         if consumed > recovered + 1e-6 {
-            out.push(error(7, None, None, name,
-                &format!("周期不可持续：工 {worked_hours:.0}h 耗 {consumed:.1} 点 > 休 {rest_hours:.0}h 回 {recovered:.1} 点（宿舍回复 {recovery}/h）"),
-                "心情与宿舍·工休比（连续在岗时长×净消耗 ≤ 回复×休息时间）"));
+            if is_supported {
+                out.push(note(7, None, None, name,
+                    &format!("周期由菲亚梅塔输送维持：工 {worked_hours:.0}h 耗 {consumed:.1} 点 > 休 {rest_hours:.0}h 回 {recovered:.1} 点，患难之交互换补足（目标合计 {supported_load:.2}/h ≤ 容量 2/h）"),
+                    "菲亚梅塔·患难之交与输送容量（心情与宿舍·工休比）"));
+            } else {
+                out.push(error(7, None, None, name,
+                    &format!("周期不可持续：工 {worked_hours:.0}h 耗 {consumed:.1} 点 > 休 {rest_hours:.0}h 回 {recovered:.1} 点（宿舍回复 {recovery}/h）"),
+                    "心情与宿舍·工休比（连续在岗时长×净消耗 ≤ 回复×休息时间）"));
+            }
         }
         let _ = best_len;
     }
+}
+
+/// 单名干员的最不利房间净消耗（基础消耗 + 增耗表），返回 (净消耗, 最不利房间)。
+fn mood_net(
+    name: &str,
+    sorted: &[usize],
+    room_of: &HashMap<(usize, String), String>,
+    views: &[ShiftView],
+    layout: &LayoutInfo,
+) -> (f64, String) {
+    let mut worst_cost = 0.0;
+    let mut worst_room = String::new();
+    for &si in sorted {
+        let room_id = room_of
+            .get(&(si, name.to_string()))
+            .cloned()
+            .unwrap_or_default();
+        let kind = if room_id.starts_with("trade") {
+            "trade"
+        } else if room_id.starts_with("manu") {
+            "manufacture"
+        } else {
+            "other"
+        };
+        let (occ, level) = {
+            let room = views[si].rooms.iter().find(|r| r.room_id == room_id);
+            let occ = room.map(|r| r.operators.len()).unwrap_or(1);
+            let level = layout.level_of(&room_id);
+            (occ, level)
+        };
+        let cost = if kind == "other" {
+            0.75
+        } else {
+            base_mood_cost(kind, occ, level)
+        };
+        if cost > worst_cost {
+            worst_cost = cost;
+            worst_room = room_id;
+        }
+    }
+    let delta = MOOD_DELTA_TABLE
+        .iter()
+        .find(|d| d.name == name)
+        .map(|d| d.extra_per_hour)
+        .unwrap_or(0.0);
+    (worst_cost + delta, worst_room)
 }
 
 // ---- 检查 8：连续全周期工作 ----
