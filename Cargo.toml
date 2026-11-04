@@ -2,12 +2,12 @@
 name = "infracalc-review"
 version = "0.1.0"
 edition = "2021"
-description = "排班表审查与组合效率核对工具：解析 box + plan.compute 结果，调用 ArknightsInfraCalc-v3 效率评估函数做部分干员/组合/体系求解，对照知识库锚点输出报告"
+description = "排班表审查与组合效率核对工具：解析 box + plan.compute 结果，调用 infra-core 效率评估函数，对照知识库锚点输出报告"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-arknights-infra-v3 = { path = "../ArknightsInfraCalc-v3" }
+infra-core = { git = "https://github.com/KnightCodeSquareMatrix/ArknightsInfraCalc-v2.git", rev = "0462dea32bab4a528db52659b6db04eae19ea1fc" }
 
 [[bin]]
 name = "infracalc-review"

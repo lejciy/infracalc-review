@@ -333,24 +333,40 @@ pub fn cross_check_shifts(
     result: &PlanResult,
     evaluator: &PartialEvaluator,
 ) -> Result<Vec<ShiftCrossCheck>, String> {
+    use infra_core::layout::FacilityKind;
     let mut out = Vec::new();
     for shift in &result.rotation.shifts {
-        // 作业房间：生产+中枢+发电+会客+办公室（宿舍为休息位，评估意义不同，跳过）
-        let rooms: Vec<RoomSpec> = shift
-            .assignment
-            .rooms
-            .iter()
-            .filter(|r| !r.room_id.starts_with("dorm"))
-            .map(|r| RoomSpec {
-                room_id: r.room_id.clone(),
-                operators: r.operators.iter().map(|o| o.name.clone()).collect(),
-                overrides: HashMap::new(),
-            })
-            .collect();
-        let evaluated = evaluator.evaluate(&rooms, shift.duration_hours.max(1.0) as u32)?;
+        if shift.assignment.rooms.is_empty() && !shift.efficiencies.room_lines.is_empty() {
+            return Err(format!(
+                "shift {} 缺少逐班 assignment.rooms，无法复评",
+                shift.index
+            ));
+        }
+        let evaluated = evaluator.replay_shift(shift)?;
+        // 回收站即使空站也应有基础效率行；不能因 plan 缺行而静默漏审。
+        for room in &evaluator.blueprint.rooms {
+            if room.kind == FacilityKind::Recycle
+                && !shift
+                    .efficiencies
+                    .room_lines
+                    .iter()
+                    .any(|line| line.room_id == room.id.0)
+            {
+                return Err(format!(
+                    "shift {} recycle room {} 缺少效率行",
+                    shift.index, room.id.0
+                ));
+            }
+        }
         for line in &shift.efficiencies.room_lines {
-            let kind = room_kind(&line.room_id);
-            if kind != "trade" && kind != "manufacture" && kind != "power" {
+            let kind = evaluator.kind_of(&line.room_id)?;
+            if !matches!(
+                kind,
+                FacilityKind::TradePost
+                    | FacilityKind::Factory
+                    | FacilityKind::PowerPlant
+                    | FacilityKind::Recycle
+            ) {
                 continue;
             }
             if let Some(ev) = evaluated.rooms.iter().find(|er| er.room_id == line.room_id) {
@@ -359,10 +375,10 @@ pub fn cross_check_shifts(
                     room_id: line.room_id.clone(),
                     plan_total: line.total_efficiency,
                     eval_total: ev.total_efficiency,
-                    plan_skill: if kind == "trade" {
-                        line.operator_efficiency
-                    } else {
-                        line.manufacture_skill_efficiency
+                    plan_skill: match kind {
+                        FacilityKind::Factory => line.manufacture_skill_efficiency,
+                        FacilityKind::PowerPlant => line.power_skill_efficiency,
+                        _ => line.operator_efficiency,
                     },
                     eval_skill: ev.skill,
                     plan_global: line.global_efficiency,
@@ -374,8 +390,32 @@ pub fn cross_check_shifts(
                         "review".into()
                     },
                 });
+            } else {
+                return Err(format!(
+                    "shift {} room {} 缺少核心复评效率行",
+                    shift.index, line.room_id
+                ));
             }
         }
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_shifts_without_assignments_instead_of_reporting_empty_review() {
+        let layout = infra_core::default_layout_243_path().unwrap();
+        let box_path = infra_core::default_operbox_full_e2_path().unwrap();
+        let evaluator =
+            PartialEvaluator::new(layout.to_str().unwrap(), box_path.to_str().unwrap()).unwrap();
+        let plan: PlanResult = serde_json::from_value(serde_json::json!({
+            "rotation": { "shifts": [{ "index": 1, "efficiencies": { "room_lines": [{ "room_id": "trade_1" }] } }] }
+        })).unwrap();
+        assert!(cross_check_shifts(&plan, &evaluator)
+            .unwrap_err()
+            .contains("assignment.rooms"));
+    }
 }

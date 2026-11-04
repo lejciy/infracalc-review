@@ -1,4 +1,4 @@
-//! 输入解析：干员盒（operbox）与 plan.compute 结果 JSON（schema v1–4 容忍读）。
+//! 输入解析：干员盒（operbox）与 plan.compute 结果 JSON（schema v1–7 容忍读）。
 
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -58,7 +58,7 @@ impl OperBox {
 #[derive(Debug, Deserialize)]
 pub struct PlanEnvelope {
     #[serde(default)]
-    pub id: i64,
+    pub id: serde_json::Value,
     #[serde(default)]
     pub ok: bool,
     #[serde(default)]
@@ -139,22 +139,24 @@ pub struct Shift {
     pub weighted_power: f64,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, serde::Serialize)]
 pub struct ShiftAssignment {
     #[serde(default)]
     pub rooms: Vec<ShiftRoom>,
     #[serde(default)]
     pub training_assist: Option<serde_json::Value>,
+    #[serde(default)]
+    pub base_workforce: Vec<serde_json::Value>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, serde::Serialize)]
 pub struct ShiftRoom {
     pub room_id: String,
     #[serde(default)]
     pub operators: Vec<ShiftOperator>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize, serde::Serialize)]
 pub struct ShiftOperator {
     pub name: String,
     #[serde(default)]
@@ -163,6 +165,8 @@ pub struct ShiftOperator {
     pub level: u32,
     #[serde(default)]
     pub rarity: u8,
+    #[serde(default)]
+    pub work_mood: Option<u8>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -332,5 +336,18 @@ pub fn room_kind(room_id: &str) -> &'static str {
         "training"
     } else {
         "other"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PlanEnvelope;
+
+    #[test]
+    fn plan_request_id_accepts_worker_string_and_numeric_values() {
+        for id in ["\"review-smoke\"", "42"] {
+            let json = format!("{{\"id\":{id},\"ok\":false}}");
+            assert!(serde_json::from_str::<PlanEnvelope>(&json).is_ok());
+        }
     }
 }

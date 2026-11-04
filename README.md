@@ -4,44 +4,56 @@
 `plan.compute` 结果 JSON（含轮换排班、MAA 导出、练卡建议、box 对标），输出：
 
 1. **十四项检查**（skill-9 排班表审查口径）：明确错误 / 需要改进 两级结论；
-2. **全部组合体系核对**：知识库效率锚点 vs ArknightsInfraCalc-v3 评估函数核算，
+2. **全部组合体系核对**：知识库效率锚点 vs ArknightsInfraCalc-v2 评估函数核算，
    逐组合给出 match / approx / mismatch 判定；
 3. **逐班复评**：同一评估函数重放排班表逐房效率，与 plan 自报值对照。
 
 ## 依赖
 
-- `../ArknightsInfraCalc-v3`（path 依赖，调用其 `eval_v2_assignment_with_shift`
-  效率评估函数；布局文件复用其 `data/layout/*.json`）；
+- `infra-core`（Git 依赖固定在 `0462dea32bab4a528db52659b6db04eae19ea1fc`，
+  调用 `evaluate_base_assignment_efficiencies`；无需机器专属的同级目录）；
 - `data/combos.json`：知识库组合登记表（31 个组合/体系：成员、锚度、部分求解
   房间、效率锚点），编码自 arknights-base-vault `docs/3-组合库/`，出处见各条 `kb_ref`。
 
 ## 推荐使用方式
 
-本仓以 path 依赖引用 v3，两仓需克隆为同级目录；`--box` 用你自己的干员盒
-JSON，`--plan` 用 v3 对同一 box 求解出的 `plan.compute` 结果 JSON：
+本仓引用固定版本的 v2；`--box` 用你自己的干员盒
+JSON，`--plan` 用 v2 对同一 box 求解出的 `plan.compute` 结果 JSON：
 
 ```bash
-git clone https://github.com/KnightCodeSquareMatrix/ArknightsInfraCalc-v3.git
 git clone https://github.com/lejciy/infracalc-review.git
 cd infracalc-review
-cargo build --offline
+cargo build --release --locked
 
 # 完整审查（检查 + 组合核对 + 逐班复评）
-target/debug/infracalc-review.exe review \
-  --layout ../ArknightsInfraCalc-v3/data/layout/243_use_this_.json \
+target/release/infracalc-review review \
+  --layout <layout.json> \
   --box    <box.json> \
   --plan   <plan-compute.json> \
   --out out/report.json --md out/report.md
 
 # 只跑组合核对（可 --only tequila_group 过滤）
-target/debug/infracalc-review.exe combos --layout ... --box ... --out out/combos.json
+target/release/infracalc-review combos --layout ... --box ... --out out/combos.json
 
 # 任意子集单房评估（部分求解）
-target/debug/infracalc-review.exe room --layout ... --box ... \
+target/release/infracalc-review room --layout ... --box ... \
   --room trade_1 --ops 巫恋,龙舌兰,卡夫卡
 ```
 
-## 部分求解改造点（相对 v3 `eval` CLI 的全量口径）
+## 当前布局与 Check 集成
+
+支持核心协议的 `recycle` 回收站：Lv1/Lv2/Lv3 容量为 1/2/2。
+接受当前核心声明的 plan schema 1–7；未知版本仍明确诊断。
+逐班复评包含回收站总效率及技能；部分评估显示人数加成；缺失回收站效率行会明确记录复评未完成。
+回收站不加入贸易、制造、发电的 daily 汇总。逐班复评的设施分类以布局定义为准。
+逐班复评直接重放公共 assignment（含宿舍、练度、可选心情、训练副手及
+`base_workforce`），保留小数班长；组合部分评估仍按满心情和知识库锚度运行。
+
+Check 的 `INFRACALC_REVIEW_BIN` 应显式指向已部署的本工具。外部数据 bundle
+由调用方设置 `ARKNIGHTS_INFRA_DATA_DIR`；内置数据模式使用固定核心版本的内置数据。
+更新工具只影响后续审查，旧 Check 结果不自动回填。报告完成不等于排班质量结论。
+
+## 部分求解改造点（相对 v2 `layout eval` CLI 的全量口径）
 
 `src/partial.rs` 的 `PartialEvaluator`：
 
@@ -86,9 +98,9 @@ target/debug/infracalc-review.exe room --layout ... --box ... \
 
 ## 相关项目与边界
 
-- **[ArknightsInfraCalc-v3](https://github.com/KnightCodeSquareMatrix/ArknightsInfraCalc-v3)**——排班求解器。本工具是它的下游核验方：消费其 `plan.compute` 输出 JSON，并以 path 依赖调用其 `eval_v2_assignment_with_shift` 效率评估函数做独立复算。本工具自身不求解排班、不产出 plan；核验中发现的评估函数缺陷修在 v3 仓（见上节五文件修复记录），本仓不携带 v3 代码副本。
+- **ArknightsInfraCalc-v2**——排班求解器及本工具的效率评估真源。本工具消费其 `plan.compute` 输出，并以固定 Git 依赖调用 `infra-core` 的逐房评估函数做独立复算。本工具自身不求解排班、不产出 plan；上节 v3 的历史样例结论不能作为当前 v2 评估的验证结论。
 - **[RIIC-knowledge](https://github.com/lejciy/RIIC-knowledge)**（arknights-base-vault 对外版）——基建知识库。十四项检查规则（skill-9 排班表审查口径）与 31 个组合的效率锚点均编码自其正文，出处见 `src/kb.rs` 注释与 `data/combos.json` 各条 `kb_ref`；知识库数值变更后需人工同步 `kb.rs` 静态表与 `combos.json`，本仓不反向写回知识库。
-- **infracalc-review（本仓）**——核验工具。输入 box、plan 与布局，输出审查报告；报告用于核对求解器输出与知识库口径是否一致，排班决策本身仍以 v3 输出与知识库正文为准。
+- **infracalc-review（本仓）**——核验工具。输入 box、plan 与布局，输出审查报告；报告用于核对求解器输出与知识库口径是否一致，排班决策本身仍以 v2 输出与知识库正文为准。
 
 ## 检查能力边界
 

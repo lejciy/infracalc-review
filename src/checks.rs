@@ -133,11 +133,12 @@ impl LayoutInfo {
                     dorm_levels.push(level);
                 }
                 let capacity = match kind.as_str() {
-                    "control_center" | "control" => level.clamp(1, 5) as usize,
+                    "control_center" | "control" => 5,
                     "trade_post" | "factory" | "trade" | "manufacture" => {
                         level.clamp(1, 3) as usize
                     }
                     "meeting_room" | "meeting" => 2,
+                    "recycle" => infra_core::layout::recycle_operator_capacity(level),
                     "dormitory" | "dorm" => dorm_beds.unwrap_or(5),
                     "power_plant" | "power" | "office" | "training_room" | "training"
                     | "workshop" => 1,
@@ -172,7 +173,7 @@ impl LayoutInfo {
             .unwrap_or_else(|| room_kind(room_id).to_string())
     }
 
-    /// 与 v3 `NormalizedBlueprint::capacity_for` 对齐的冷路径容量推导。
+    /// 与当前 infra-core 对齐的房间容量。
     pub fn capacity_of(&self, room_id: &str) -> usize {
         if let Some(capacity) = self.capacities.get(room_id) {
             return *capacity;
@@ -187,9 +188,10 @@ impl LayoutInfo {
             };
         };
         match kind.as_str() {
-            "control_center" | "control" => (*level).clamp(1, 5) as usize,
+            "control_center" | "control" => 5,
             "trade_post" | "factory" | "trade" | "manufacture" => (*level).clamp(1, 3) as usize,
             "meeting_room" | "meeting" => 2,
+            "recycle" => infra_core::layout::recycle_operator_capacity(*level),
             "dormitory" | "dorm" => 5,
             "power_plant" | "power" | "office" | "training_room" | "training" | "workshop" => 1,
             _ => 1,
